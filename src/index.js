@@ -37,6 +37,31 @@ function checksCreateTodosUserAvailability(request, response, next) {
   return response.status(403).json({ error: 'Has exceeded free plan, check pro plan.' })
 }
 
+function checksTodoExists(request, response, next) {
+  const { username } = request.headers;
+  const { id } = request.params;
+
+  const user = users.find(user => user.username === username);
+  if (!user) {
+    return response.status(404).json({ error: 'User not found' });
+  }
+
+  const matchUuidV4 = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
+  if (!id || !matchUuidV4.test(id)) {
+    return response.status(400).json({ error: 'Invalid id' });
+  }
+
+  const todo = user.todos.find(todo => todo.id === id);
+  if (!todo) {
+    return response.status(404).json({ error: 'Todo not found' });
+  }
+
+  request.todo = todo;
+  request.user = user;
+
+  return next();
+}
+
 app.post('/users', (request, response) => {
   const { username, name } = request.body;
 
